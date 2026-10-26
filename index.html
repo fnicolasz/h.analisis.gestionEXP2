@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Funciones lineales y regresión</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Cuaderno de estudio: una columna de lectura (~46rem), fórmulas en fichas y gráficos sobre papel milimetrado. */
+:root {
+  --bg: #f3f6f8;
+  --surface: #ffffff;
+  --ink: #17212d;
+  --muted: #566372;
+  --line: #d7dee5;
+  --grid: #e9eef2;
+  --accent: #0b6a85;
+  --accent-soft: #e0eff3;
+  --fit: #c9561f;
+  --fit-soft: #fbe8dd;
+  --good: #1f7a4b;
+  --warn: #9a6200;
+  --bad: #b23636;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1318; --surface: #161e26; --ink: #e6ecf1; --muted: #9babb9; --line: #2a3642; --grid: #1d2731;
+    --accent: #5db7d1; --accent-soft: #15303a; --fit: #f08b55; --fit-soft: #3b2417;
+    --good: #5cc38b; --warn: #e3a948; --bad: #f07d7d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1318; --surface: #161e26; --ink: #e6ecf1; --muted: #9babb9; --line: #2a3642; --grid: #1d2731;
+  --accent: #5db7d1; --accent-soft: #15303a; --fit: #f08b55; --fit-soft: #3b2417;
+  --good: #5cc38b; --warn: #e3a948; --bad: #f07d7d; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 1.0625rem/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 3rem;
+}
+[hidden] { display: none !important; }
+.wrap { max-width: 46rem; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 6vw, 2.9rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.65rem; font-weight: 700; }
+h3 { font-size: 1.15rem; font-weight: 500; }
+p { margin: 0; }
+code, .mono { font-family: var(--f-mono); font-size: 0.9em; }
+a { color: var(--accent); }
+.eyebrow { font: 500 0.75rem/1.3 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.muted { color: var(--muted); }
+.small { font-size: 0.92rem; }
+
+header.top { padding-block: 2.5rem 1.5rem; display: grid; gap: 0.9rem; }
+header.top .lead { font-size: 1.15rem; color: var(--muted); max-width: 38rem; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
+nav.toc a {
+  text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 0.3rem 0.85rem; font-size: 0.92rem;
+}
+nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+section { padding-block: 2.2rem 0.5rem; display: grid; gap: 1.1rem; scroll-margin-top: 1rem; }
+section > header { display: grid; gap: 0.35rem; border-top: 2px solid var(--ink); padding-top: 1rem; }
+
+.flow { counter-reset: paso; list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+.flow li { counter-increment: paso; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0.6rem; align-items: baseline; }
+.flow li::before { content: counter(paso); font: 500 0.85rem var(--f-mono); color: var(--accent); background: var(--accent-soft); border-radius: 6px; text-align: center; padding: 0.1rem 0; }
+
+.formula {
+  font: 500 clamp(1.6rem, 6vw, 2.2rem)/1.2 var(--f-mono); text-align: center; padding: 1.1rem 1rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.formula small { display: block; font: 400 0.9rem var(--f-body); color: var(--muted); margin-top: 0.35rem; }
+.duo { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0.9rem; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; display: grid; gap: 0.45rem; min-width: 0; }
+.card .k { font: 500 0.8rem var(--f-mono); color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.eq { font-family: var(--f-mono); background: var(--accent-soft); color: var(--ink); padding: 0.05rem 0.4rem; border-radius: 5px; white-space: nowrap; }
+.xl { font-family: var(--f-mono); font-size: 0.88rem; color: var(--accent); overflow-wrap: anywhere; }
+.types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.types div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.7rem; text-align: center; font-size: 0.92rem; display: grid; gap: 0.3rem; justify-items: center; }
+.types svg { width: 54px; height: 36px; }
+
+.lab { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; display: grid; gap: 1rem; }
+.lab-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; align-items: baseline; }
+.lab-head .tag { font: 500 0.72rem var(--f-mono); color: var(--fit); background: var(--fit-soft); border-radius: 999px; padding: 0.15rem 0.6rem; letter-spacing: 0.05em; text-transform: uppercase; }
+.plot { width: 100%; height: auto; display: block; touch-action: manipulation; }
+.plot text { font-family: var(--f-mono); font-size: 11px; fill: var(--muted); }
+.plot .lbl { font-size: 12px; fill: var(--ink); }
+.plot .lbl-fit { font-size: 12px; fill: var(--fit); font-weight: 500; }
+.g-minor { stroke: var(--grid); stroke-width: 1; fill: none; }
+.g-major { stroke: var(--line); stroke-width: 1; fill: none; }
+.axis { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.ln { stroke: var(--accent); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+.fitln { stroke: var(--fit); stroke-width: 2.5; fill: none; stroke-linecap: round; }
+.myln { stroke: var(--ink); stroke-width: 1.8; stroke-dasharray: 6 5; fill: none; }
+.tri { stroke: var(--fit); stroke-width: 1.6; stroke-dasharray: 4 3; fill: none; }
+.res { stroke: var(--fit); stroke-width: 1.2; stroke-dasharray: 3 3; fill: none; opacity: 0.85; }
+.pt { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.pt-add { fill: var(--fit); stroke: var(--surface); stroke-width: 2; }
+.pt-open { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+.paper { fill: var(--surface); }
+
+.controls { display: grid; gap: 0.8rem; }
+.slider { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 4rem; gap: 0.6rem; align-items: center; }
+.slider label { font-size: 0.95rem; }
+.slider output { font: 500 0.95rem var(--f-mono); text-align: right; font-variant-numeric: tabular-nums; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.readout { display: grid; gap: 0.35rem; margin: 0; }
+.readout div { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 0.6rem; font-size: 0.97rem; }
+.readout dt { color: var(--muted); }
+.readout dd { margin: 0; min-width: 0; }
+.big-eq { font: 500 1.35rem var(--f-mono); color: var(--accent); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+button, .btn {
+  font: 500 0.92rem var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 0.4rem 0.9rem; cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.toggle { display: inline-flex; gap: 0.45rem; align-items: center; font-size: 0.95rem; cursor: pointer; }
+.toggle input { accent-color: var(--accent); width: 1.05rem; height: 1.05rem; }
+.mini-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: end; }
+.mini-form label { display: grid; gap: 0.15rem; font-size: 0.85rem; color: var(--muted); }
+.mini-form input[type="number"] {
+  width: 5.2rem; font: 400 0.95rem var(--f-mono); padding: 0.35rem 0.45rem; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+}
+.err { color: var(--bad); font-size: 0.88rem; min-height: 1.2em; }
+.steps { font-family: var(--f-mono); font-size: 0.9rem; background: var(--bg); border-radius: 8px; padding: 0.7rem 0.8rem; display: grid; gap: 0.2rem; overflow-x: auto; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 0.6rem; }
+.stat { background: var(--bg); border-radius: 8px; padding: 0.6rem 0.75rem; display: grid; gap: 0.1rem; }
+.stat span { font-size: 0.82rem; color: var(--muted); }
+.stat b { font: 500 1.2rem var(--f-mono); font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.85rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.sw-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.sw-sq { width: 10px; height: 10px; background: var(--fit); }
+.sw-ln { width: 18px; height: 3px; background: var(--fit); }
+.sw-dash { width: 18px; height: 0; border-top: 2px dashed var(--ink); }
+.interp { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.45rem; }
+.panel { border-top: 1px solid var(--line); padding-top: 0.9rem; display: grid; gap: 0.7rem; }
+.verdict { font-size: 0.95rem; padding: 0.55rem 0.75rem; border-radius: 8px; background: var(--bg); }
+.verdict.ok { color: var(--good); }
+.verdict.warn { color: var(--warn); }
+
+.defs { display: grid; gap: 0.9rem; }
+.scale { display: grid; gap: 0.3rem; }
+.scale .bar { display: flex; height: 1.6rem; border-radius: 6px; overflow: hidden; font: 500 0.75rem var(--f-mono); }
+.scale .bar div { display: grid; place-items: center; color: var(--ink); min-width: 0; overflow: hidden; white-space: nowrap; }
+.z-f { background: var(--accent); color: var(--surface) !important; }
+.z-m { background: var(--accent-soft); }
+.z-d { background: var(--grid); }
+.scale .ticks { display: flex; justify-content: space-between; font: 400 0.75rem var(--f-mono); color: var(--muted); }
+
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 34rem; font-size: 0.95rem; }
+th, td { text-align: left; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 0.78rem var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td code { color: var(--accent); white-space: nowrap; }
+.pill { display: inline-block; font: 500 0.75rem var(--f-mono); border-radius: 999px; padding: 0.05rem 0.5rem; background: var(--fit-soft); color: var(--fit); white-space: nowrap; }
+.pill.any { background: var(--grid); color: var(--muted); }
+ol.howto { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.4rem; }
+.tpl { display: grid; gap: 0.7rem; }
+.tpl .card p { font-size: 1rem; }
+.blank { font-family: var(--f-mono); font-size: 0.88em; background: var(--fit-soft); color: var(--fit); border-radius: 4px; padding: 0 0.3rem; white-space: nowrap; }
+ul.errs { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.45rem; }
+footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.88rem; }
+@media (max-width: 30rem) {
+  .slider { grid-template-columns: 6.2rem minmax(0, 1fr) 3.4rem; }
+  .readout div { grid-template-columns: 1fr; gap: 0; }
+  .types { grid-template-columns: 1fr; }
+  .types div { grid-template-columns: 54px minmax(0, 1fr); text-align: left; justify-items: start; align-items: center; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Experiencia 2 · Herramientas de Análisis Estadístico</p>
+  <h1>Funciones lineales y regresión lineal</h1>
+  <p class="lead">Guía resumen para la prueba: qué significa cada medida, cómo se calcula en Excel y cómo se interpreta en palabras.</p>
+  <nav class="toc" aria-label="Secciones">
+    <a href="#lineal">Función lineal</a>
+    <a href="#regresion">Regresión lineal</a>
+    <a href="#medidas">Covarianza, r y R²</a>
+    <a href="#excel">En Excel</a>
+    <a href="#prueba">Cómo responder</a>
+  </nav>
+</header>
+
+<section aria-labelledby="t-flujo">
+  <header><p class="eyebrow">Mapa de la prueba</p><h2 id="t-flujo">El orden en que se resuelve un ejercicio</h2></header>
+  <ol class="flow">
+    <li><span>Identificar <b>X</b> (variable independiente, la que explica) e <b>Y</b> (dependiente, la que se quiere estimar).</span></li>
+    <li><span>Construir el <b>gráfico de dispersión</b> con línea de tendencia, ecuación y R².</span></li>
+    <li><span>Calcular la <b>covarianza</b> e interpretar su signo.</span></li>
+    <li><span>Calcular el <b>coeficiente de correlación r</b>: dirección y fuerza.</span></li>
+    <li><span>Escribir el <b>modelo</b> <span class="eq">Ŷ = m·X + n</span> e interpretar <b>m</b> y <b>n</b> en el contexto.</span></li>
+    <li><span>Calcular <b>R²</b> y decidir si el modelo es bueno para estimar.</span></li>
+    <li><span><b>Estimar</b> un valor y revisar si está dentro del rango de los datos.</span></li>
+  </ol>
+</section>
+
+<section id="lineal" aria-labelledby="t-lineal">
+  <header><p class="eyebrow">Parte 1</p><h2 id="t-lineal">Función lineal</h2></header>
+  <p>Una función lineal describe una relación en que <b>Y cambia siempre la misma cantidad</b> cada vez que X aumenta en 1. Su gráfico es una recta.</p>
+  <div class="formula">y = m·x + n<small>m = pendiente · n = coeficiente de posición</small></div>
+  <div class="duo">
+    <div class="card">
+      <p class="k">Pendiente · m</p>
+      <p>Cuánto cambia y cuando x aumenta en 1 unidad. Es la inclinación de la recta.</p>
+      <p class="small">Con dos puntos: <span class="eq">m = (y₂ − y₁) / (x₂ − x₁)</span></p>
+    </div>
+    <div class="card">
+      <p class="k">Coeficiente de posición · n</p>
+      <p>Valor de y cuando x = 0. Es el punto donde la recta corta el eje Y: <span class="eq">(0, n)</span>.</p>
+      <p class="small">Con un punto y m: <span class="eq">n = y₁ − m·x₁</span></p>
+    </div>
+  </div>
+  <div class="types" role="list">
+    <div role="listitem"><svg viewBox="0 0 54 36" aria-hidden="true"><path d="M4 32 L50 4" class="ln"/></svg><span><b>m &gt; 0</b><br>creciente</span></div>
+    <div role="listitem"><svg viewBox="0 0 54 36" aria-hidden="true"><path d="M4 4 L50 32" class="ln"/></svg><span><b>m &lt; 0</b><br>decreciente</span></div>
+    <div role="listitem"><svg viewBox="0 0 54 36" aria-hidden="true"><path d="M4 18 L50 18" class="ln"/></svg><span><b>m = 0</b><br>constante</span></div>
+  </div>
+
+  <div class="lab" aria-labelledby="t-lab1">
+    <div class="lab-head"><h3 id="t-lab1">Laboratorio de la recta</h3><span class="tag">Interactivo</span></div>
+    <p class="small muted">Mueve m y n y mira qué le pasa a la recta. El triángulo naranjo muestra la pendiente: avanzas 1 en x y subes (o bajas) m en y.</p>
+    <svg id="plot1" class="plot" viewBox="0 0 320 320" role="img" aria-label="Plano cartesiano de -6 a 6 con la recta y = m·x + n"></svg>
+    <div class="controls">
+      <div class="slider"><label for="m1">Pendiente m</label><input type="range" id="m1" min="-3" max="3" step="0.5" value="2"><output id="m1o" for="m1">2</output></div>
+      <div class="slider"><label for="n1">Coef. posición n</label><input type="range" id="n1" min="-5" max="5" step="0.5" value="1"><output id="n1o" for="n1">1</output></div>
+    </div>
+    <dl class="readout" aria-live="polite">
+      <div><dt>Función</dt><dd class="big-eq" id="r1eq">y = 2x + 1</dd></div>
+      <div><dt>Tipo</dt><dd id="r1type"></dd></div>
+      <div><dt>Pendiente</dt><dd id="r1m"></dd></div>
+      <div><dt>Coef. de posición</dt><dd id="r1n"></dd></div>
+      <div><dt>Corte con eje X</dt><dd id="r1x"></dd></div>
+    </dl>
+    <div class="panel">
+      <h3>Encontrar la función a partir de dos puntos</h3>
+      <form id="twoPts" class="mini-form" novalidate>
+        <label for="px1">x₁<input type="number" id="px1" step="any" value="1"></label>
+        <label for="py1">y₁<input type="number" id="py1" step="any" value="3"></label>
+        <label for="px2">x₂<input type="number" id="px2" step="any" value="4"></label>
+        <label for="py2">y₂<input type="number" id="py2" step="any" value="-3"></label>
+        <button type="submit">Calcular m y n</button>
+      </form>
+      <p class="err" id="twoErr" role="alert"></p>
+      <div class="steps" id="twoSteps" hidden></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="k">Ejemplo resuelto</p>
+    <p>Un plan de 10 GB cuesta $12.990 y uno de 20 GB cuesta $16.490. Suponiendo relación lineal:</p>
+    <div class="steps">
+      <span>m = (16.490 − 12.990) / (20 − 10) = 3.500 / 10 = 350</span>
+      <span>n = 12.990 − 350 · 10 = 9.490</span>
+      <span>P(x) = 350x + 9.490</span>
+    </div>
+    <p><b>m:</b> cada GB adicional sube el precio en $350. <b>n:</b> el precio base del plan (con 0 GB) sería $9.490.</p>
+    <p class="small muted">Para despejar x (por ejemplo, cuántos GB da un plan de $20.000): <span class="eq">x = (y − n) / m</span> = (20.000 − 9.490) / 350 ≈ 30 GB.</p>
+    <p class="small">En Excel, con los dos puntos en A2:B3: <span class="xl">=PENDIENTE(B2:B3;A2:A3)</span> y <span class="xl">=INTERSECCION.EJE(B2:B3;A2:A3)</span></p>
+  </div>
+</section>
+
+<section id="regresion" aria-labelledby="t-reg">
+  <header><p class="eyebrow">Parte 2</p><h2 id="t-reg">Modelo de regresión lineal</h2></header>
+  <p>Con datos reales los puntos no caen exactamente sobre una recta. El modelo de regresión busca <b>la recta que mejor se ajusta a la nube de puntos</b> y la usa para estimar Y a partir de X.</p>
+  <div class="formula">Ŷ = m·X + n<small>Ŷ («y gorro») es un valor estimado, no exacto</small></div>
+  <div class="duo">
+    <div class="card"><p class="k">Error o residuo</p><p>Distancia vertical entre el dato real y la recta: <span class="eq">e = Y − Ŷ</span>. Algunos quedan sobre la recta y otros bajo ella.</p></div>
+    <div class="card"><p class="k">Mínimos cuadrados</p><p>La recta de regresión es la que deja la <b>menor suma de errores al cuadrado</b> (SCE). Ninguna otra recta logra una SCE menor.</p></div>
+  </div>
+
+  <div class="lab" aria-labelledby="t-lab2">
+    <div class="lab-head"><h3 id="t-lab2">Laboratorio de regresión</h3><span class="tag">Interactivo</span></div>
+    <div class="chips" role="group" aria-label="Elegir conjunto de datos" id="dsChips"></div>
+    <p class="small muted" id="dsDesc"></p>
+    <div class="legend">
+      <span><i class="sw-dot" aria-hidden="true"></i>Dato</span>
+      <span><i class="sw-sq" aria-hidden="true"></i>Punto agregado</span>
+      <span><i class="sw-ln" aria-hidden="true"></i>Recta de regresión</span>
+      <span id="lgMine" hidden><i class="sw-dash" aria-hidden="true"></i>Tu recta</span>
+    </div>
+    <p class="small" id="yTitle" style="font-family: var(--f-mono); color: var(--muted);"></p>
+    <svg id="plot2" class="plot" viewBox="0 0 360 300" role="img" aria-label="Gráfico de dispersión con recta de regresión"></svg>
+    <p class="small muted">Toca el gráfico para agregar un punto y mira cómo cambian r, R² y la recta. Un solo punto alejado puede cambiar mucho el modelo.</p>
+    <div class="row">
+      <label class="toggle" for="showRes"><input type="checkbox" id="showRes">Ver errores</label>
+      <label class="toggle" for="manual"><input type="checkbox" id="manual">Ajustar una recta a mano</label>
+      <button type="button" id="undoPt">Quitar último punto</button>
+      <button type="button" id="resetPts">Restaurar datos</button>
+    </div>
+    <form id="addPt" class="mini-form" novalidate aria-label="Agregar un punto escribiendo sus coordenadas">
+      <label for="ax">X<input type="number" id="ax" step="any"></label>
+      <label for="ay">Y<input type="number" id="ay" step="any"></label>
+      <button type="submit">Agregar punto</button>
+    </form>
+    <p class="err" id="addErr" role="alert"></p>
+
+    <div class="panel" id="manualPanel" hidden>
+      <div class="slider"><label for="mm">Tu m</label><input type="range" id="mm"><output id="mmo" for="mm"></output></div>
+      <div class="slider"><label for="mn">Tu n</label><input type="range" id="mn"><output id="mno" for="mn"></output></div>
+      <p class="verdict" id="sceBox" aria-live="polite"></p>
+    </div>
+
+    <div class="big-eq" id="regEq" aria-live="polite"></div>
+    <div class="stats" id="stats"></div>
+    <ul class="interp" id="interp" aria-live="polite"></ul>
+
+    <div class="panel">
+      <h3>Estimar con el modelo</h3>
+      <form id="estForm" class="mini-form" novalidate>
+        <label for="estX" id="estLbl">X<input type="number" id="estX" step="any"></label>
+        <button type="submit">Estimar Ŷ</button>
+      </form>
+      <p class="err" id="estErr" role="alert"></p>
+      <p class="verdict" id="estOut" aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<section id="medidas" aria-labelledby="t-med">
+  <header><p class="eyebrow">Parte 3</p><h2 id="t-med">Covarianza, correlación y R²</h2></header>
+  <div class="defs">
+    <div class="card">
+      <p class="k">Covarianza · Sxy</p>
+      <p>Mide la <b>dirección</b> de la relación entre X e Y.</p>
+      <p class="small"><span class="eq">Sxy = Σ(x − x̄)(y − ȳ) / (N − 1)</span> en una muestra; se divide por N si es la población.</p>
+      <p><b>Sxy &gt; 0:</b> relación directa (si X sube, Y sube). <b>Sxy &lt; 0:</b> relación inversa. <b>Sxy ≈ 0:</b> no hay relación lineal.</p>
+      <p class="small muted">Su tamaño depende de las unidades de las variables, así que solo se interpreta el signo. Para la fuerza se usa r.</p>
+    </div>
+    <div class="card">
+      <p class="k">Coeficiente de correlación · r</p>
+      <p>Mide <b>dirección y fuerza</b> de la relación lineal. Siempre está entre −1 y 1.</p>
+      <p class="small"><span class="eq">r = Sxy / (Sx · Sy)</span></p>
+      <div class="scale" aria-label="Escala de r: de -1 a -0,7 fuerte, de -0,7 a -0,3 moderada, de -0,3 a 0,3 débil, de 0,3 a 0,7 moderada y de 0,7 a 1 fuerte">
+        <div class="bar">
+          <div class="z-f" style="width:15%">fuerte</div>
+          <div class="z-m" style="width:20%">moderada</div>
+          <div class="z-d" style="width:30%">débil</div>
+          <div class="z-m" style="width:20%">moderada</div>
+          <div class="z-f" style="width:15%">fuerte</div>
+        </div>
+        <div class="ticks"><span>−1</span><span>−0,7</span><span>−0,3</span><span>0</span><span>0,3</span><span>0,7</span><span>1</span></div>
+      </div>
+      <p class="small muted">El signo dice la dirección (negativo = inversa, positivo = directa). Esta es una escala habitual; confirma la que usa tu docente.</p>
+    </div>
+    <div class="card">
+      <p class="k">Coeficiente de determinación · R²</p>
+      <p>Indica qué <b>porcentaje de la variabilidad de Y se explica por X</b> a través del modelo lineal. Va de 0 a 1 (0% a 100%).</p>
+      <p class="small"><span class="eq">R² = r²</span> · si r = 0,98 entonces R² = 0,96 = 96%</p>
+      <p>Mientras más cerca de 100%, mejor estima el modelo. Un criterio frecuente es considerar bueno un modelo con R² ≥ 70%.</p>
+    </div>
+    <div class="card">
+      <p class="k">Coeficiente de variación · CV</p>
+      <p>Es una medida de <b>dispersión relativa</b> (unidad anterior), no del modelo. Sirve para comparar qué variable es más homogénea.</p>
+      <p class="small"><span class="eq">CV = S / x̄</span> expresado en %. CV menor = datos más homogéneos y media más representativa.</p>
+      <p class="small muted">No lo confundas con el coeficiente de correlación r.</p>
+    </div>
+  </div>
+</section>
+
+<section id="excel" aria-labelledby="t-xl">
+  <header><p class="eyebrow">Parte 4</p><h2 id="t-xl">Cómo se calcula en Excel</h2></header>
+  <p>En Excel en español (Chile) los argumentos se separan con <b>punto y coma</b> y los decimales con coma.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Qué calculas</th><th>Función</th><th>Orden</th></tr></thead>
+      <tbody>
+        <tr><td>Promedio</td><td><code>=PROMEDIO(rango)</code></td><td><span class="pill any">—</span></td></tr>
+        <tr><td>Desviación estándar (muestra)</td><td><code>=DESVEST.M(rango)</code></td><td><span class="pill any">—</span></td></tr>
+        <tr><td>Coeficiente de variación</td><td><code>=DESVEST.M(rango)/PROMEDIO(rango)</code></td><td><span class="pill any">formato %</span></td></tr>
+        <tr><td>Covarianza (muestra)</td><td><code>=COVARIANZA.M(rango_X;rango_Y)</code></td><td><span class="pill any">da igual</span></td></tr>
+        <tr><td>Covarianza (población)</td><td><code>=COVARIANZA.P(rango_X;rango_Y)</code></td><td><span class="pill any">da igual</span></td></tr>
+        <tr><td>Correlación r</td><td><code>=COEF.DE.CORREL(rango_X;rango_Y)</code></td><td><span class="pill any">da igual</span></td></tr>
+        <tr><td>Pendiente m</td><td><code>=PENDIENTE(rango_Y;rango_X)</code></td><td><span class="pill">Y primero</span></td></tr>
+        <tr><td>Coef. de posición n</td><td><code>=INTERSECCION.EJE(rango_Y;rango_X)</code></td><td><span class="pill">Y primero</span></td></tr>
+        <tr><td>R²</td><td><code>=COEFICIENTE.R2(rango_Y;rango_X)</code></td><td><span class="pill">Y primero</span></td></tr>
+        <tr><td>Estimación Ŷ</td><td><code>=PRONOSTICO.LINEAL(x;rango_Y;rango_X)</code></td><td><span class="pill">x, Y, X</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small muted">En versiones antiguas de Excel la estimación es <code>=PRONOSTICO(x;rango_Y;rango_X)</code>. Si vas a arrastrar una fórmula que usa m y n, fíjalas con $ (tecla F4): <code>=$B$20*A2+$B$21</code>.</p>
+  <div class="card">
+    <p class="k">Gráfico de dispersión con recta, ecuación y R²</p>
+    <ol class="howto">
+      <li>Selecciona las dos columnas de datos, con X a la izquierda e Y a la derecha.</li>
+      <li>Insertar → Gráficos → Dispersión (solo marcadores).</li>
+      <li>Clic derecho sobre cualquier punto → Agregar línea de tendencia.</li>
+      <li>Elige Lineal y marca «Presentar ecuación en el gráfico» y «Presentar el valor R cuadrado en el gráfico».</li>
+      <li>Agrega título y nombres a los ejes con el botón + del gráfico.</li>
+    </ol>
+    <p class="small muted">La ecuación que muestra el gráfico (por ejemplo y = 5,0234x + 8,5298) debe coincidir con PENDIENTE e INTERSECCION.EJE. Sirve para revisar que no invertiste los rangos.</p>
+  </div>
+</section>
+
+<section id="prueba" aria-labelledby="t-pr">
+  <header><p class="eyebrow">Parte 5</p><h2 id="t-pr">Cómo responder en la prueba</h2></header>
+  <p>Una interpretación siempre usa los nombres y unidades del problema. Completa estas frases con tu contexto:</p>
+  <div class="tpl">
+    <div class="card"><p class="k">Covarianza</p><p>La covarianza es <span class="blank">positiva/negativa</span>, por lo que existe una relación lineal <span class="blank">directa/inversa</span> entre <span class="blank">X</span> e <span class="blank">Y</span>: a mayor <span class="blank">X</span>, <span class="blank">mayor/menor</span> <span class="blank">Y</span>.</p></div>
+    <div class="card"><p class="k">Correlación</p><p>Como r = <span class="blank">valor</span>, existe una relación lineal <span class="blank">positiva/negativa</span> y <span class="blank">fuerte/moderada/débil</span> entre <span class="blank">X</span> e <span class="blank">Y</span>.</p></div>
+    <div class="card"><p class="k">Pendiente</p><p>Por cada <span class="blank">1 unidad de X</span> adicional, <span class="blank">Y</span> <span class="blank">aumenta/disminuye</span> en promedio <span class="blank">|m|</span> <span class="blank">unidades de Y</span>.</p></div>
+    <div class="card"><p class="k">Coeficiente de posición</p><p>Cuando <span class="blank">X</span> es 0, el valor estimado de <span class="blank">Y</span> es <span class="blank">n</span>. Si X = 0 no tiene sentido o está fuera del rango de los datos, agrega que es solo referencial.</p></div>
+    <div class="card"><p class="k">R²</p><p>El <span class="blank">R²·100</span>% de la variabilidad de <span class="blank">Y</span> se explica por <span class="blank">X</span> a través del modelo lineal, por lo que el modelo <span class="blank">es/no es</span> adecuado para estimar.</p></div>
+    <div class="card"><p class="k">Estimación</p><p>Si <span class="blank">X</span> es <span class="blank">valor</span>, se estima que <span class="blank">Y</span> será <span class="blank">Ŷ</span>. La estimación es confiable porque el valor está dentro del rango observado y R² es alto.</p></div>
+  </div>
+  <div class="card">
+    <p class="k">Errores frecuentes</p>
+    <ul class="errs">
+      <li>Invertir los rangos en PENDIENTE, INTERSECCION.EJE o COEFICIENTE.R2. Va primero Y.</li>
+      <li>Interpretar el tamaño de la covarianza. Solo vale su signo.</li>
+      <li>Escribir «R² = 0,96%». Es 0,96, o sea 96%.</li>
+      <li>Interpretar n sin decir que X = 0 puede estar fuera del rango de los datos.</li>
+      <li>Estimar con un X muy lejano a los datos (extrapolación): el modelo puede dar valores absurdos.</li>
+      <li>Decir que X causa Y solo porque r es alto. La correlación muestra asociación, no prueba causa.</li>
+      <li>Confundir coeficiente de variación (dispersión) con coeficiente de correlación (relación entre dos variables).</li>
+    </ul>
+  </div>
+</section>
+
+<footer>Los datos de los ejemplos y del laboratorio son ficticios y sirven solo para practicar.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var NS = "http://www.w3.org/2000/svg";
+  function fmt(v, d) {
+    if (d === undefined) d = 2;
+    if (!isFinite(v)) return "—";
+    if (Math.abs(v) < Math.pow(10, -d) / 2) v = 0;
+    return v.toLocaleString("es-CL", { minimumFractionDigits: 0, maximumFractionDigits: d });
+  }
+  function $(id) { return document.getElementById(id); }
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function eqText(m, n, yv, d) {
+    var ms = fmt(m, d), ns = fmt(Math.abs(n), d);
+    var sign = n < 0 && fmt(n, d) !== "0" ? " − " : " + ";
+    return yv + " = " + ms + (yv === "y" ? "x" : "·X") + sign + ns;
+  }
+
+  /* ---------- Laboratorio 1: función lineal ---------- */
+  var L1 = { pad: 24, size: 272, min: -6, max: 6 };
+  var st1 = { m: 2, n: 1, pts: null };
+  function sx1(x) { return L1.pad + (x - L1.min) / (L1.max - L1.min) * L1.size; }
+  function sy1(y) { return L1.pad + (L1.max - y) / (L1.max - L1.min) * L1.size; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  function draw1() {
+    var svg = $("plot1"); svg.textContent = "";
+    var m = st1.m, n = st1.n;
+    var defs = el("defs", {}); var cp = el("clipPath", { id: "cp1" });
+    cp.appendChild(el("rect", { x: L1.pad, y: L1.pad, width: L1.size, height: L1.size }));
+    defs.appendChild(cp); svg.appendChild(defs);
+    svg.appendChild(el("rect", { x: L1.pad, y: L1.pad, width: L1.size, height: L1.size, class: "paper" }));
+    for (var i = L1.min; i <= L1.max; i += 0.5) {
+      var cls = (i % 2 === 0) ? "g-major" : "g-minor";
+      svg.appendChild(el("line", { x1: sx1(i), y1: L1.pad, x2: sx1(i), y2: L1.pad + L1.size, class: cls }));
+      svg.appendChild(el("line", { x1: L1.pad, y1: sy1(i), x2: L1.pad + L1.size, y2: sy1(i), class: cls }));
+    }
+    svg.appendChild(el("line", { x1: L1.pad, y1: sy1(0), x2: L1.pad + L1.size, y2: sy1(0), class: "axis" }));
+    svg.appendChild(el("line", { x1: sx1(0), y1: L1.pad, x2: sx1(0), y2: L1.pad + L1.size, class: "axis" }));
+    [-6, -4, -2, 2, 4, 6].forEach(function (t) {
+      svg.appendChild(el("text", { x: sx1(t), y: sy1(0) + 14, "text-anchor": "middle" }, String(t).replace("-", "−")));
+      svg.appendChild(el("text", { x: sx1(0) - 6, y: sy1(t) + 4, "text-anchor": "end" }, String(t).replace("-", "−")));
+    });
+    svg.appendChild(el("text", { x: L1.pad + L1.size - 4, y: sy1(0) - 6, "text-anchor": "end", class: "lbl" }, "x"));
+    svg.appendChild(el("text", { x: sx1(0) + 6, y: L1.pad + 12, class: "lbl" }, "y"));
+    var g = el("g", { "clip-path": "url(#cp1)" });
+    g.appendChild(el("line", { x1: sx1(L1.min), y1: sy1(m * L1.min + n), x2: sx1(L1.max), y2: sy1(m * L1.max + n), class: "ln" }));
+    g.appendChild(el("path", { d: "M" + sx1(0) + " " + sy1(n) + " L" + sx1(1) + " " + sy1(n) + " L" + sx1(1) + " " + sy1(n + m), class: "tri" }));
+    svg.appendChild(g);
+    var yLab1 = clamp(sy1(n) + (m >= 0 ? 15 : -7), L1.pad + 12, L1.pad + L1.size - 4);
+    svg.appendChild(el("text", { x: (sx1(0) + sx1(1)) / 2, y: yLab1, "text-anchor": "middle", class: "lbl-fit" }, "1"));
+    if (m !== 0) {
+      svg.appendChild(el("text", { x: sx1(1) + 5, y: clamp(sy1(n + m / 2) + 4, L1.pad + 12, L1.pad + L1.size - 4), class: "lbl-fit" }, "m = " + fmt(m)));
+    }
+    if (n >= L1.min && n <= L1.max) {
+      svg.appendChild(el("circle", { cx: sx1(0), cy: sy1(n), r: 5, class: "pt" }));
+      svg.appendChild(el("text", { x: sx1(0) - 8, y: clamp(sy1(n) - 8, L1.pad + 12, L1.pad + L1.size - 4), "text-anchor": "end", class: "lbl" }, "n = " + fmt(n)));
+    }
+    if (m !== 0) {
+      var x0 = -n / m;
+      if (x0 >= L1.min && x0 <= L1.max && Math.abs(x0) > 0.05) svg.appendChild(el("circle", { cx: sx1(x0), cy: sy1(0), r: 4.5, class: "pt-open" }));
+    }
+    if (st1.pts) st1.pts.forEach(function (p) {
+      if (p[0] >= L1.min && p[0] <= L1.max && p[1] >= L1.min && p[1] <= L1.max)
+        svg.appendChild(el("rect", { x: sx1(p[0]) - 5, y: sy1(p[1]) - 5, width: 10, height: 10, class: "pt-add" }));
+    });
+
+    $("r1eq").textContent = eqText(m, n, "y", 2);
+    $("r1type").textContent = m > 0 ? "Creciente (m > 0): cuando x aumenta, y aumenta." : m < 0 ? "Decreciente (m < 0): cuando x aumenta, y disminuye." : "Constante (m = 0): y no cambia, la recta es horizontal.";
+    $("r1m").textContent = m === 0 ? "Por cada unidad que aumenta x, y no cambia." : "Por cada unidad que aumenta x, y " + (m > 0 ? "aumenta" : "disminuye") + " en " + fmt(Math.abs(m)) + ".";
+    $("r1n").textContent = "Cuando x = 0, y = " + fmt(n) + ". La recta corta el eje Y en (0; " + fmt(n) + ").";
+    $("r1x").textContent = m === 0 ? (n === 0 ? "La recta es el mismo eje X." : "No corta el eje X (es horizontal).") : "x = −n / m = " + fmt(-n / m) + " (círculo vacío en el gráfico).";
+  }
+  function syncSliders1() {
+    $("m1o").textContent = fmt(st1.m); $("n1o").textContent = fmt(st1.n);
+  }
+  $("m1").addEventListener("input", function () { st1.m = +this.value; st1.pts = null; $("twoSteps").hidden = true; syncSliders1(); draw1(); });
+  $("n1").addEventListener("input", function () { st1.n = +this.value; st1.pts = null; $("twoSteps").hidden = true; syncSliders1(); draw1(); });
+  $("twoPts").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var ids = ["px1", "py1", "px2", "py2"], v = [];
+    for (var i = 0; i < 4; i++) {
+      var raw = $(ids[i]).value;
+      if (raw === "" || !isFinite(+raw)) { $("twoErr").textContent = "Escribe un número en cada casilla."; return; }
+      v.push(+raw);
+    }
+    if (v[0] === v[2]) { $("twoErr").textContent = "x₁ y x₂ deben ser distintos: si son iguales la recta es vertical y no es una función."; return; }
+    $("twoErr").textContent = "";
+    var m = (v[3] - v[1]) / (v[2] - v[0]), n = v[1] - m * v[0];
+    st1.m = m; st1.n = n; st1.pts = [[v[0], v[1]], [v[2], v[3]]];
+    $("m1").value = clamp(Math.round(m * 2) / 2, -3, 3); $("n1").value = clamp(Math.round(n * 2) / 2, -5, 5);
+    syncSliders1();
+    var box = $("twoSteps"); box.textContent = "";
+    [
+      "m = (y₂ − y₁) / (x₂ − x₁) = (" + fmt(v[3]) + " − " + fmt(v[1]) + ") / (" + fmt(v[2]) + " − " + fmt(v[0]) + ") = " + fmt(m, 3),
+      "n = y₁ − m·x₁ = " + fmt(v[1]) + " − " + fmt(m, 3) + " · " + fmt(v[0]) + " = " + fmt(n, 3),
+      eqText(m, n, "y", 3)
+    ].forEach(function (t) { var s = document.createElement("span"); s.textContent = t; box.appendChild(s); });
+    box.hidden = false;
+    draw1();
+  });
+  ["px1", "py1", "px2", "py2"].forEach(function (id) { $(id).addEventListener("input", function () { $("twoErr").textContent = ""; }); });
+
+  /* ---------- Laboratorio 2: regresión ---------- */
+  var DS = [
+    {
+      id: "pub", label: "Publicidad y ventas",
+      desc: "12 meses de una empresa: gasto en publicidad (X) y ventas (Y), ambos en millones de pesos.",
+      xT: "Publicidad X (MM$)", yT: "Eje Y: ventas (MM$)",
+      xs: [1.2, 1.5, 1.8, 2.0, 2.3, 2.5, 2.8, 3.0, 3.3, 3.5, 3.8, 4.0],
+      ys: [14.5, 15.8, 18.9, 17.6, 20.4, 21.9, 21.1, 24.3, 23.8, 26.5, 27.2, 29.6],
+      xD: [1, 4.25], xS: 0.5, yD: [12, 32], yS: 4, xR: 0.1, yR: 0.1,
+      xWhat: "el gasto en publicidad", yWhat: "las ventas",
+      pos: "a mayor gasto en publicidad, mayores ventas", neg: "a mayor gasto en publicidad, menores ventas",
+      mT: function (m) { return "Por cada millón de pesos adicional en publicidad, las ventas " + (m >= 0 ? "aumentan" : "disminuyen") + " en promedio " + fmt(Math.abs(m)) + " MM$."; },
+      nT: function (n) { return "Si no se invierte en publicidad (X = 0), las ventas estimadas serían " + fmt(n) + " MM$."; },
+      est: 3.6, estL: "Publicidad X (MM$)", estU: "MM$ en ventas", estD: 2,
+      mm: [0, 10, 0.1, 3.5], mn: [0, 20, 0.1, 12]
+    },
+    {
+      id: "pre", label: "Precio y unidades",
+      desc: "10 semanas de una tienda: precio del producto (X, en miles de pesos) y unidades vendidas (Y).",
+      xT: "Precio X (miles de $)", yT: "Eje Y: unidades vendidas",
+      xs: [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5],
+      ys: [420, 405, 371, 362, 330, 318, 281, 276, 240, 231],
+      xD: [1.5, 7], xS: 1, yD: [200, 440], yS: 40, xR: 0.1, yR: 1,
+      xWhat: "el precio", yWhat: "las unidades vendidas",
+      pos: "a mayor precio, más unidades vendidas", neg: "a mayor precio, menos unidades vendidas",
+      mT: function (m) { return "Por cada $1.000 que sube el precio, las unidades vendidas " + (m >= 0 ? "aumentan" : "disminuyen") + " en promedio " + fmt(Math.abs(m), 1) + " unidades."; },
+      nT: function (n) { return "Con precio $0 (X = 0) se venderían " + fmt(n, 0) + " unidades."; },
+      est: 4.8, estL: "Precio X (miles de $)", estU: "unidades vendidas", estD: 0,
+      mm: [-80, 0, 1, -25], mn: [300, 700, 1, 460]
+    },
+    {
+      id: "caf", label: "Edad y gasto en café",
+      desc: "12 clientes de una cafetería: edad (X, en años) y gasto mensual en café (Y, en miles de pesos).",
+      xT: "Edad X (años)", yT: "Eje Y: gasto mensual en café (miles de $)",
+      xs: [19, 23, 25, 28, 31, 34, 37, 40, 44, 48, 52, 57],
+      ys: [14, 9, 18, 11, 16, 8, 17, 13, 15, 10, 13, 16],
+      xD: [15, 60], xS: 10, yD: [6, 20], yS: 2, xR: 1, yR: 1,
+      xWhat: "la edad", yWhat: "el gasto en café",
+      pos: "a mayor edad, mayor gasto en café", neg: "a mayor edad, menor gasto en café",
+      mT: function (m) { return "Por cada año más de edad, el gasto mensual en café " + (m >= 0 ? "aumenta" : "disminuye") + " en promedio " + fmt(Math.abs(m), 3) + " mil pesos."; },
+      nT: function (n) { return "Con edad 0 (X = 0) el gasto estimado sería " + fmt(n) + " mil pesos, algo que no tiene sentido en este contexto."; },
+      est: 35, estL: "Edad X (años)", estU: "mil pesos de gasto en café", estD: 1,
+      mm: [-0.5, 0.5, 0.01, 0.2], mn: [0, 25, 0.1, 8]
+    }
+  ];
+  var L2 = { L: 48, R: 12, T: 12, B: 40, W: 360, H: 300 };
+  L2.pw = L2.W - L2.L - L2.R; L2.ph = L2.H - L2.T - L2.B;
+  var st2 = { ds: DS[0], added: [], res: false, manual: false, um: 0, un: 0 };
+
+  function sx2(x) { var d = st2.ds.xD; return L2.L + (x - d[0]) / (d[1] - d[0]) * L2.pw; }
+  function sy2(y) { var d = st2.ds.yD; return L2.T + (d[1] - y) / (d[1] - d[0]) * L2.ph; }
+  function ix2(px) { var d = st2.ds.xD; return d[0] + (px - L2.L) / L2.pw * (d[1] - d[0]); }
+  function iy2(py) { var d = st2.ds.yD; return d[1] - (py - L2.T) / L2.ph * (d[1] - d[0]); }
+  function roundTo(v, s) { return Math.round(v / s) * s; }
+
+  function allPts() {
+    var d = st2.ds, out = [];
+    for (var i = 0; i < d.xs.length; i++) out.push({ x: d.xs[i], y: d.ys[i], add: false });
+    st2.added.forEach(function (p) { out.push({ x: p.x, y: p.y, add: true }); });
+    return out;
+  }
+  function stats(pts) {
+    var N = pts.length, sx = 0, sy = 0;
+    pts.forEach(function (p) { sx += p.x; sy += p.y; });
+    var xb = sx / N, yb = sy / N, sxx = 0, syy = 0, sxy = 0;
+    pts.forEach(function (p) { sxx += (p.x - xb) * (p.x - xb); syy += (p.y - yb) * (p.y - yb); sxy += (p.x - xb) * (p.y - yb); });
+    var m = sxx > 0 ? sxy / sxx : NaN, n = yb - m * xb;
+    var r = (sxx > 0 && syy > 0) ? sxy / Math.sqrt(sxx * syy) : NaN;
+    var sce = 0; pts.forEach(function (p) { var e = p.y - (m * p.x + n); sce += e * e; });
+    return { N: N, xb: xb, yb: yb, cov: N > 1 ? sxy / (N - 1) : NaN, r: r, r2: r * r, m: m, n: n, sce: sce,
+      xmin: Math.min.apply(null, pts.map(function (p) { return p.x; })), xmax: Math.max.apply(null, pts.map(function (p) { return p.x; })) };
+  }
+  function sceOf(pts, m, n) { var s = 0; pts.forEach(function (p) { var e = p.y - (m * p.x + n); s += e * e; }); return s; }
+  function strength(r) { var a = Math.abs(r); return a >= 0.7 ? "fuerte" : a >= 0.3 ? "moderada" : "débil"; }
+
+  function draw2() {
+    var d = st2.ds, pts = allPts(), S = stats(pts), svg = $("plot2");
+    svg.textContent = "";
+    var defs = el("defs", {}); var cp = el("clipPath", { id: "cp2" });
+    cp.appendChild(el("rect", { x: L2.L, y: L2.T, width: L2.pw, height: L2.ph })); defs.appendChild(cp); svg.appendChild(defs);
+    svg.appendChild(el("rect", { x: L2.L, y: L2.T, width: L2.pw, height: L2.ph, class: "paper" }));
+    var x, y, fine;
+    fine = d.xS / 5;
+    for (x = Math.ceil(d.xD[0] / fine) * fine; x <= d.xD[1] + 1e-9; x += fine) svg.appendChild(el("line", { x1: sx2(x), y1: L2.T, x2: sx2(x), y2: L2.T + L2.ph, class: "g-minor" }));
+    fine = d.yS / 4;
+    for (y = Math.ceil(d.yD[0] / fine) * fine; y <= d.yD[1] + 1e-9; y += fine) svg.appendChild(el("line", { x1: L2.L, y1: sy2(y), x2: L2.L + L2.pw, y2: sy2(y), class: "g-minor" }));
+    for (x = Math.ceil(d.xD[0] / d.xS - 1e-9) * d.xS; x <= d.xD[1] + 1e-9; x += d.xS) {
+      svg.appendChild(el("line", { x1: sx2(x), y1: L2.T, x2: sx2(x), y2: L2.T + L2.ph, class: "g-major" }));
+      svg.appendChild(el("text", { x: sx2(x), y: L2.T + L2.ph + 15, "text-anchor": "middle" }, fmt(x, 1)));
+    }
+    for (y = Math.ceil(d.yD[0] / d.yS - 1e-9) * d.yS; y <= d.yD[1] + 1e-9; y += d.yS) {
+      svg.appendChild(el("line", { x1: L2.L, y1: sy2(y), x2: L2.L + L2.pw, y2: sy2(y), class: "g-major" }));
+      svg.appendChild(el("text", { x: L2.L - 6, y: sy2(y) + 4, "text-anchor": "end" }, fmt(y, 1)));
+    }
+    svg.appendChild(el("line", { x1: L2.L, y1: L2.T + L2.ph, x2: L2.L + L2.pw, y2: L2.T + L2.ph, class: "axis" }));
+    svg.appendChild(el("line", { x1: L2.L, y1: L2.T, x2: L2.L, y2: L2.T + L2.ph, class: "axis" }));
+    svg.appendChild(el("text", { x: L2.L + L2.pw / 2, y: L2.H - 6, "text-anchor": "middle", class: "lbl" }, d.xT));
+    var g = el("g", { "clip-path": "url(#cp2)" });
+    if (isFinite(S.m)) {
+      if (st2.res) pts.forEach(function (p) {
+        g.appendChild(el("line", { x1: sx2(p.x), y1: sy2(p.y), x2: sx2(p.x), y2: sy2(S.m * p.x + S.n), class: "res" }));
+      });
+      g.appendChild(el("line", { x1: sx2(d.xD[0]), y1: sy2(S.m * d.xD[0] + S.n), x2: sx2(d.xD[1]), y2: sy2(S.m * d.xD[1] + S.n), class: "fitln" }));
+    }
+    if (st2.manual) g.appendChild(el("line", { x1: sx2(d.xD[0]), y1: sy2(st2.um * d.xD[0] + st2.un), x2: sx2(d.xD[1]), y2: sy2(st2.um * d.xD[1] + st2.un), class: "myln" }));
+    pts.forEach(function (p) {
+      if (p.add) g.appendChild(el("rect", { x: sx2(p.x) - 5, y: sy2(p.y) - 5, width: 10, height: 10, class: "pt-add" }));
+      else g.appendChild(el("circle", { cx: sx2(p.x), cy: sy2(p.y), r: 5, class: "pt" }));
+    });
+    svg.appendChild(g);
+    svg.setAttribute("aria-label", "Dispersión de " + d.label + " con " + S.N + " puntos y recta de regresión " + (isFinite(S.m) ? eqText(S.m, S.n, "Ŷ", 3) : ""));
+    render2(S, pts);
+  }
+
+  function render2(S, pts) {
+    var d = st2.ds;
+    $("regEq").textContent = isFinite(S.m) ? eqText(S.m, S.n, "Ŷ", 3) : "Se necesitan al menos 2 valores distintos de X";
+    var tiles = [
+      ["Correlación r", fmt(S.r, 3)], ["R²", isFinite(S.r2) ? fmt(S.r2 * 100, 1) + "%" : "—"],
+      ["Covarianza Sxy", fmt(S.cov, 3)], ["Pendiente m", fmt(S.m, 3)],
+      ["Coef. de posición n", fmt(S.n, 3)], ["N° de datos", String(S.N)]
+    ];
+    var box = $("stats"); box.textContent = "";
+    tiles.forEach(function (t) {
+      var dv = document.createElement("div"); dv.className = "stat";
+      var s = document.createElement("span"); s.textContent = t[0];
+      var b = document.createElement("b"); b.textContent = t[1];
+      dv.appendChild(s); dv.appendChild(b); box.appendChild(dv);
+    });
+    var li = [];
+    if (isFinite(S.r)) {
+      if (Math.abs(S.r) < 0.1) li.push("Covarianza: Sxy = " + fmt(S.cov, 3) + ". Es muy cercana a 0 en relación con la dispersión de los datos: prácticamente no hay relación lineal.");
+      else li.push("Covarianza: Sxy = " + fmt(S.cov, 3) + ", " + (S.cov > 0 ? "positiva: relación lineal directa (" + d.pos + ")." : "negativa: relación lineal inversa (" + d.neg + ")."));
+      li.push("Correlación: r = " + fmt(S.r, 3) + ". Relación lineal " + (S.r >= 0 ? "positiva" : "negativa") + " y " + strength(S.r) + " entre " + d.xWhat + " y " + d.yWhat + ".");
+      li.push("Pendiente: " + d.mT(S.m));
+      var out0 = 0 < S.xmin || 0 > S.xmax;
+      li.push("Coef. de posición: " + d.nT(S.n) + (out0 ? " X = 0 está fuera del rango de los datos (" + fmt(S.xmin) + " a " + fmt(S.xmax) + "), así que es solo referencial." : ""));
+      li.push("R² = " + fmt(S.r2 * 100, 1) + "%: ese porcentaje de la variabilidad de " + d.yWhat + " se explica por " + d.xWhat + " mediante el modelo lineal. " + (S.r2 >= 0.7 ? "Es un buen modelo para estimar." : "No es un modelo confiable para estimar."));
+    }
+    var ul = $("interp"); ul.textContent = "";
+    li.forEach(function (t) { var x = document.createElement("li"); x.textContent = t; ul.appendChild(x); });
+    if (st2.manual) {
+      var mine = sceOf(pts, st2.um, st2.un), best = S.sce, vb = $("sceBox");
+      var close = best === 0 ? mine < 1e-9 : (mine - best) / best < 0.05;
+      vb.className = "verdict " + (close ? "ok" : "warn");
+      vb.textContent = "SCE de tu recta: " + fmt(mine, 1) + " · SCE mínima (recta de regresión): " + fmt(best, 1) + ". " +
+        (close ? "Tu recta está casi en el óptimo." : "Mueve m y n para achicar la suma de errores al cuadrado. Nunca bajarás del mínimo.");
+    }
+    runEst(false);
+  }
+
+  function runEst(fromUser) {
+    var d = st2.ds, S = stats(allPts()), raw = $("estX").value, out = $("estOut");
+    if (raw === "" || !isFinite(+raw)) {
+      if (fromUser) $("estErr").textContent = "Escribe un valor numérico de X.";
+      out.textContent = ""; out.className = "verdict"; return;
+    }
+    $("estErr").textContent = "";
+    if (!isFinite(S.m)) { out.textContent = "No hay modelo para estimar."; return; }
+    var x = +raw, yh = S.m * x + S.n, inside = x >= S.xmin && x <= S.xmax;
+    out.className = "verdict " + (inside && S.r2 >= 0.7 ? "ok" : "warn");
+    out.textContent = "Ŷ = " + fmt(S.m, 3) + " · " + fmt(x, 3) + (S.n < 0 ? " − " : " + ") + fmt(Math.abs(S.n), 3) + " = " + fmt(yh, d.estD) + " " + d.estU + ". " +
+      (inside
+        ? "X está dentro del rango observado (" + fmt(S.xmin) + " a " + fmt(S.xmax) + ")" + (S.r2 >= 0.7 ? " y R² es alto: la estimación es confiable." : ", pero R² es bajo, así que la estimación no es confiable.")
+        : "X está fuera del rango observado (" + fmt(S.xmin) + " a " + fmt(S.xmax) + "): es una extrapolación, tómala con cuidado" + (S.r2 >= 0.7 ? "." : ". Además R² es bajo."));
+  }
+
+  function setupManual() {
+    var d = st2.ds;
+    [["mm", d.mm], ["mn", d.mn]].forEach(function (a) {
+      var r = $(a[0]); r.min = a[1][0]; r.max = a[1][1]; r.step = a[1][2]; r.value = a[1][3];
+    });
+    st2.um = d.mm[3]; st2.un = d.mn[3];
+    $("mmo").textContent = fmt(st2.um); $("mno").textContent = fmt(st2.un);
+  }
+  function selectDS(i) {
+    st2.ds = DS[i]; st2.added = [];
+    var btns = $("dsChips").querySelectorAll("button");
+    btns.forEach(function (b, j) { b.setAttribute("aria-pressed", j === i ? "true" : "false"); });
+    $("dsDesc").textContent = DS[i].desc;
+    $("yTitle").textContent = DS[i].yT;
+    $("estLbl").firstChild.textContent = DS[i].estL;
+    $("estX").value = DS[i].est;
+    $("addErr").textContent = ""; $("estErr").textContent = "";
+    setupManual();
+    draw2();
+  }
+  DS.forEach(function (d, i) {
+    var b = document.createElement("button"); b.type = "button"; b.textContent = d.label;
+    b.addEventListener("click", function () { selectDS(i); });
+    $("dsChips").appendChild(b);
+  });
+  function addPoint(x, y) {
+    if (st2.added.length >= 25) { $("addErr").textContent = "Llegaste al máximo de 25 puntos agregados. Quita alguno o restaura los datos."; return; }
+    st2.added.push({ x: x, y: y }); $("addErr").textContent = ""; draw2();
+  }
+  $("plot2").addEventListener("click", function (e) {
+    var svg = this, pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    var ctm = svg.getScreenCTM(); if (!ctm) return;
+    var p = pt.matrixTransform(ctm.inverse());
+    if (p.x < L2.L || p.x > L2.L + L2.pw || p.y < L2.T || p.y > L2.T + L2.ph) return;
+    var d = st2.ds;
+    addPoint(+roundTo(ix2(p.x), d.xR).toFixed(3), +roundTo(iy2(p.y), d.yR).toFixed(3));
+  });
+  $("addPt").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var rx = $("ax").value, ry = $("ay").value;
+    if (rx === "" || ry === "" || !isFinite(+rx) || !isFinite(+ry)) { $("addErr").textContent = "Escribe un número en X y en Y."; return; }
+    var d = st2.ds, x = +rx, y = +ry;
+    if (x < d.xD[0] || x > d.xD[1] || y < d.yD[0] || y > d.yD[1]) {
+      $("addErr").textContent = "Para verlo en el gráfico, X debe estar entre " + fmt(d.xD[0]) + " y " + fmt(d.xD[1]) + ", e Y entre " + fmt(d.yD[0]) + " y " + fmt(d.yD[1]) + ".";
+      return;
+    }
+    addPoint(x, y); $("ax").value = ""; $("ay").value = "";
+  });
+  ["ax", "ay"].forEach(function (id) { $(id).addEventListener("input", function () { $("addErr").textContent = ""; }); });
+  $("undoPt").addEventListener("click", function () { st2.added.pop(); $("addErr").textContent = ""; draw2(); });
+  $("resetPts").addEventListener("click", function () { st2.added = []; $("addErr").textContent = ""; draw2(); });
+  $("showRes").addEventListener("change", function () { st2.res = this.checked; draw2(); });
+  $("manual").addEventListener("change", function () {
+    st2.manual = this.checked; $("manualPanel").hidden = !this.checked; $("lgMine").hidden = !this.checked; draw2();
+  });
+  $("mm").addEventListener("input", function () { st2.um = +this.value; $("mmo").textContent = fmt(st2.um); draw2(); });
+  $("mn").addEventListener("input", function () { st2.un = +this.value; $("mno").textContent = fmt(st2.un); draw2(); });
+  $("estForm").addEventListener("submit", function (e) { e.preventDefault(); runEst(true); });
+  $("estX").addEventListener("input", function () { $("estErr").textContent = ""; });
+
+  syncSliders1(); draw1(); selectDS(0);
+})();
+</script>
+</body>
+</html>
